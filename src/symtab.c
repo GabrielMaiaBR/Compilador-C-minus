@@ -148,31 +148,53 @@ static const char* getExpTypeString(ExpType type) {
 
 // TODO: refactor everything
 void printSymTab(void) {
-	// pc("Variable Name  Scope     ID Type  Data Type  Line Numbers\n");
-	// pc("-------------  --------  -------  ---------  -------------------------\n");
+    // Cabeçalho conforme o formato esperado
+    pc("Variable Name  Scope     ID Type  Data Type  Line Numbers\n");
+    pc("-------------  --------  -------  ---------  -------------------------\n");
 
-	// Scope list = scope_list;
-	// for (int i = 0; i < HASH_SIZE; i++) {
-	// 	SymbolList s = list->hashTable[i];
-	// 	while (list != NULL) {
-	// 		LineList lines = l->lines;
-	// 		pc("%-14s ", l->name);
-
-	// 		char scopeName[MAX_SCOPE_LENGTH];
-	// 		generateScopeName(scopeName, &l->scope);
-	// 		pc("%-9s ", scopeName);
-
-	// 		pc("%-8s ", getStmtKindString(l->idType));
-	// 		pc("%-9s  ", getExpTypeString(l->dataType));
-
-	// 		while (lines != NULL) {
-	// 			if (lines->lineNo != 0) {
-	// 				pc("%2d ", lines->lineNo);
-	// 			}
-	// 			lines = lines->next;
-	// 		}
-	// 		pc("\n");
-	// 		l = l->next;
-	// 	}
-	// }
+    // Percorre cada escopo na lista
+    for (Scope sc = scope_list; sc != NULL; sc = sc->next) {
+        // Para cada índice da tabela hash do escopo atual
+        for (int i = 0; i < HASH_SIZE; i++) {
+            SymbolList sym = sc->hashTable[i];
+            // Percorre a lista de símbolos neste bucket
+            while (sym != NULL) {
+                // Imprime o nome do símbolo
+                pc("%-14s ", sym->name);
+                
+                // Se o símbolo pertence ao escopo "global", imprime vazio; caso contrário, o nome do escopo
+                if (strcmp(sym->scope, "global") == 0)
+                    pc("%-10s ", "");
+                else
+                    pc("%-10s ", sym->scope);
+                
+                // Determina a coluna "ID Type" conforme o tipo de símbolo e flag isArray:
+                // Para funções, imprime "fun"; para variáveis, se for array (ou VetK ou ParamVetK) imprime "array", caso contrário "var"
+                char idType[10];
+                if (sym->kind == FunK)
+                    strcpy(idType, "fun");
+                else if (sym->kind == VetK || sym->kind == ParamVetK)
+                    strcpy(idType, "array");
+                else if (sym->kind == VarK || sym->kind == ParamK)
+                    strcpy(idType, (sym->isArray ? "array" : "var"));
+                else
+                    strcpy(idType, "unknown");
+                pc("%-7s ", idType);
+                
+                // Imprime o "Data Type": int para Integer, void para Void
+                pc("%-9s  ", (sym->type == Integer ? "int" : "void"));
+                
+                // Imprime os números das linhas onde o símbolo aparece
+                LineList lines = sym->lines;
+                while (lines != NULL) {
+                    if (lines->lineno > 0)
+                        pc("%2d ", lines->lineno);
+                    lines = lines->next;
+                }
+                pc("\n");
+                sym = sym->next;
+            }
+        }
+    }
 }
+
