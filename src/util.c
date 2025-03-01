@@ -40,6 +40,7 @@ void printLine() {
 	}
 }
 
+
 void printToken(TokenType token, const char* tokenString) {
 	switch (token) {
 		case IF:
@@ -169,115 +170,127 @@ char* copyString(char* s) {
 }
 
 void printTree(TreeNode* tree) {
-	int i;
-	while (tree != NULL) {
-		if (tree->nodekind == StmtK && tree->kind.stmt == CompoundK) {
-			for (i = 0; i < MAXCHILDREN; i++) {
-				if (tree->child[i] != NULL) {
-					if (indentno > 0) printSpaces();
-					printTree(tree->child[i]);
-				}
-			}
-		} else {
-			if (indentno > 0) {
-				printSpaces();
-			}
+    int i;
+    while (tree != NULL) {
+        if (tree->kind.stmt == CompoundK && tree->nodekind == StmtK) {
+            // Para CompoundK, apenas percorre os filhos sem imprimir mensagem ou indentação extra
+            for (i = 0; i < MAXCHILDREN; i++) {
+                if (tree->child[i] != NULL) {
+                    printTree(tree->child[i]);
+                }
+            }
+        } else {
+            // Imprime a indentação sempre (não depende de indentno > 0)
+            printSpaces();
 
-			if (tree->nodekind == StmtK) {
-				switch (tree->kind.stmt) {
-					case FunK:
-						pc("Declare function (return type \"%s\"): %s\n",
-						   tree->type == Integer ? "int"
-						   : tree->type == Void  ? "void"
-						                         : "UNSPECIFIED",
-						   tree->attr.name);
-						break;
-					case VarK:
-						pc("Declare %s var: %s\n",
-						   tree->type == Integer ? "int"
-						   : tree->type == Void  ? "void"
-						                         : "UNSPECIFIED",
-						   tree->attr.name);
-						break;
-					case VetK:
-						pc("Declare %s array: %s\n",
-						   tree->type == Integer ? "int"
-						   : tree->type == Void  ? "void"
-						                         : "UNSPECIFIED",
-						   tree->attr.name);
-						break;
+            if (tree->nodekind == StmtK) {
+                switch (tree->kind.stmt) {
+                    case FunK:
+                        pc("Declare function (return type \"%s\"): %s\n",
+                           tree->type == Integer ? "int" :
+                           tree->type == Void  ? "void" : "ERROR",
+                           tree->attr.name);
+                        break;
+                    case VarK:
+                        // Se a variável for um array (isArray==TRUE), imprime "array"; caso contrário, "var"
+                        pc("Declare %s %s: %s\n",
+                           tree->type == Integer ? "int" :
+                           tree->type == Void  ? "void" : "ERROR",
+                           (tree->isArray ? "array" : "var"),
+                           tree->attr.name);
+                        break;
+                    case VetK:
+                        // Se houver uso de VetK, pode ser tratado aqui
+                        pc("Declare %s array: %s\n",
+                           tree->type == Integer ? "int" :
+                           tree->type == Void  ? "void" : "ERROR",
+                           tree->attr.name);
+                        break;
 					case ParamK:
-						pc("Function param (%s var): %s\n",
+						// Se o parâmetro for array (isArray == TRUE), imprima "array", caso contrário "var".
+						pc("Function param (%s %s): %s\n",
 						   tree->type == Integer ? "int"
-						   : tree->type == Void  ? "void"
-						                         : "UNSPECIFIED",
+						   : tree->type == Void  ? "void" : "ERROR",
+						   tree->isArray ? "array" : "var",
 						   tree->attr.name);
 						break;
-					case ParamVetK:
-						pc("Function param (%s array): %s\n",
-						   tree->type == Integer ? "int"
-						   : tree->type == Void  ? "void"
-						                         : "UNSPECIFIED",
-						   tree->attr.name);
-						break;
-					case IfK:
-						pc("Conditional selection\n");
-						break;
-					case IteraK:
-						pc("Iteration (loop)\n");
-						break;
-					case ReturnK:
-						pc("Return\n");
-						break;
-					// case AssignVetK:
-					// 	pc("Assign to array: %s\n", tree->attr.name);
-					// 	break;
-					default:
-						pc("Unknown ExpNode kind\n");
-						break;
-				}
-
-				INDENT;
-				for (i = 0; i < MAXCHILDREN; i++) {
-					if (tree->child[i] != NULL) {
-						printTree(tree->child[i]);
-					}
-				}
-				UNINDENT;
-			} else if (tree->nodekind == ExpK) {
-				switch (tree->kind.exp) {
-					case OpK:
-						pc("Op: ");
-						printToken(tree->attr.op, "\0");
-						break;
-					case ConstK:
-						pc("Const: %d\n", tree->attr.val);
-						break;
-					case IdK:
-						pc("Id: %s\n", tree->attr.name);
-						break;
-					case FunCallK:
-						pc("Function call: %s\n", tree->attr.name);
-						break;
-					case AssignK:
-						pc("Assign to var: %s\n", tree->attr.name);
-						break;
-					default:
-						pc("Unknown ExpNode kind\n");
-						break;
-				}
-
-				INDENT;
-				for (i = 0; i < MAXCHILDREN; i++) {
-					if (tree->child[i] != NULL) {
-						printTree(tree->child[i]);
-					}
-				}
-				UNINDENT;
-			} else
-				pc("Unknown node kind\n");
-		}
-
-		tree = tree->sibling;
-	}
+		
+                    case ParamVetK:
+                        pc("Function param (%s array): %s\n",
+                           tree->type == Integer ? "int" :
+                           tree->type == Void  ? "void" : "ERROR",
+                           tree->attr.name);
+                        break;
+                    case IfK:
+                        pc("Conditional selection\n");
+                        break;
+                    case IteraK:
+                        pc("Iteration (loop)\n");
+                        break;
+                    case ReturnK:
+                        pc("Return\n");
+                        break;
+                    default:
+                        pc("Unknown Stmt kind\n");
+                        break;
+                }
+                INDENT;
+                for (i = 0; i < MAXCHILDREN; i++) {
+                    if (tree->child[i] != NULL) {
+                        printTree(tree->child[i]);
+                    }
+                }
+                UNINDENT;
+            } else if (tree->nodekind == ExpK) {
+                switch (tree->kind.exp) {
+                    case OpK:
+                        pc("Op: ");
+                        printToken(tree->attr.op, "\0");
+                        break;
+                    case ConstK:
+                        pc("Const: %d\n", tree->attr.val);
+                        break;
+                    case IdK:
+                        pc("Id: %s\n", tree->attr.name);
+                        break;
+                    case FunCallK:
+                        pc("Function call: %s\n", tree->attr.name);
+                        break;
+                    case AssignK: {
+                        if (tree->child[0] != NULL && tree->child[0]->kind.exp == IdK && tree->child[0]->nodekind == ExpK) {
+                            if (tree->child[0]->child[0] != NULL) {
+                                pc("Assign to array: %s\n", tree->child[0]->attr.name);
+                                INDENT;
+                                if (tree->child[0]->child[0]->attr.val != 0){
+									printTree(tree->child[0]->child[0]);
+								}
+                                UNINDENT;
+                            } else {
+                                pc("Assign to var: %s\n", tree->child[0]->attr.name);
+                            }
+                        } else {
+                            pc("ERROR\n");
+                        }
+                        break;
+                    }
+                    default:
+                        pc("ERROR\n");
+                        break;
+                }
+                INDENT;
+                // Ao imprimir os filhos do nó de atribuição, pula o índice 0 para não duplicar o nó já processado.
+                for (i = 0; i < MAXCHILDREN; i++) {
+                    if (tree->nodekind == ExpK && tree->kind.exp == AssignK && i == 0)
+                        continue;
+                    if (tree->child[i] != NULL) {
+                        printTree(tree->child[i]);
+                    }
+                }
+                UNINDENT;
+            } else {
+                pc("Unknown node kind\n");
+            }
+        }
+        tree = tree->sibling;
+    }
 }

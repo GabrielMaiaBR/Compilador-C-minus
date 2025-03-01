@@ -41,7 +41,7 @@ extern FILE* redundant_source;
 extern int lineno;
 
 typedef enum { StmtK, ExpK } NodeKind;
-typedef enum { FunK, VarK, VetK, ParamK, ParamVetK, IfK, IteraK, ReturnK, CompoundK } StmtKind;
+typedef enum { FunK, VarK, VetK, ParamK, ParamVetK, IfK, IteraK, ReturnK, CompoundK} StmtKind;
 typedef enum { OpK, ConstK, IdK, AssignK, FunCallK, UnaryK } ExpKind;
 
 typedef enum { Void, Integer } ExpType;

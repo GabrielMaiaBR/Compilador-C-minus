@@ -88,7 +88,7 @@ var_decl    : type_sp ID SEMI
             }
              | type_sp ID LBRACKET NUM RBRACKET SEMI
              {
-              $$ = newStmtNode(VetK);
+              $$ = newStmtNode(VarK);
               $$->attr.name = $2;
               $$->type = $1;
               $$->isArray = TRUE;
@@ -142,7 +142,7 @@ param       : type_sp ID
               }
               | type_sp ID LBRACKET RBRACKET
               {
-                $$ = newStmtNode(ParamVetK);
+                $$ = newStmtNode(ParamK);
                 $$->attr.name = $2;
                 $$->type = $1;
                 $$->isArray = TRUE;
