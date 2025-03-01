@@ -1,0 +1,4 @@
+int arr[10];
+void main(void) {
+    arr[0] = 5;
+}

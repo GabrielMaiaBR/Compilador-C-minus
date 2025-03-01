@@ -1,0 +1,187 @@
+
+TINY COMPILATION: ../example/nested.cm
+1: int add(int x, int y) {
+	1: reserved word: int
+	1: ID, name= add
+	1: (
+	1: reserved word: int
+	1: ID, name= x
+	1: ,
+	1: reserved word: int
+	1: ID, name= y
+	1: )
+	1: {
+2:     return x + y;
+	2: reserved word: return
+	2: ID, name= x
+	2: +
+	2: ID, name= y
+	2: ;
+3: }
+	3: }
+4: int double(int x) {
+	4: reserved word: int
+	4: ID, name= double
+	4: (
+	4: reserved word: int
+	4: ID, name= x
+	4: )
+	4: {
+5:     return x + x;
+	5: reserved word: return
+	5: ID, name= x
+	5: +
+	5: ID, name= x
+	5: ;
+6: }
+	6: }
+7: void main(void) {
+	7: reserved word: void
+	7: ID, name= main
+	7: (
+	7: reserved word: void
+	7: )
+	7: {
+8:     int x;
+	8: reserved word: int
+	8: ID, name= x
+	8: ;
+9:     x = add(5, double(3));
+	9: ID, name= x
+	9: =
+	9: ID, name= add
+	9: (
+	9: NUM, val= 5
+	9: ,
+	9: ID, name= double
+	9: (
+	9: NUM, val= 3
+	9: )
+	9: )
+	9: ;
+10: }
+	10: }
+	10: EOF
+
+Syntax tree:
+Declare function (return type "int"): add
+    Function param (int var): x
+    Function param (int var): y
+        Return
+        Op: +
+            Id: x
+            Id: y
+Declare function (return type "int"): double
+    Function param (int var): x
+        Return
+        Op: +
+            Id: x
+            Id: x
+Declare function (return type "void"): main
+        Declare int var: x
+    Assign to var: x
+        Function call: add
+            Const: 5
+            Function call: double
+                Const: 3
+
+Building Symbol Table...
+
+Symbol table:
+
+Variable Name  Scope     ID Type  Data Type  Line Numbers
+-------------  --------  -------  ---------  -------------------------
+main                     fun      void        7 
+input                    fun      int        
+double                   fun      int         4  9 
+output                   fun      void       
+add                      fun      int         1  9 
+x              add       var      int         1  2 
+y              add       var      int         1  2 
+x              double    var      int         4  5 
+x              main      var      int         8  9 
+
+Checking Types...
+
+Type Checking Finished
+* TINY Compilation to TM Code
+* Standard prelude:
+  0:     LD  6,0(0) 	load maxaddress from location 0
+  1:     LD  2,0(0) 	load maxaddress from location 0
+  2:     ST  0,0(0) 	clear location 0
+* End of standard prelude.
+* -> Init Function (add)
+  4:     ST  0,-1(2) 	store return address from ac
+* -> Param
+* <- Param
+* -> Param
+* <- Param
+* -> return
+* -> Op
+* -> Id
+  5:     LD  0,-2(2) 	load id value
+* <- Id
+  6:     ST  0,-4(2) 	op: push left
+* -> Id
+  7:     LD  0,-3(2) 	load id value
+* <- Id
+  8:     LD  1,-4(2) 	op: load left
+  9:    ADD  0,1,0 	op +
+* <- Op
+ 10:    LDA  1,0(2) 	save current fp into ac1
+ 11:     LD  2,0(2) 	make fp = ofp
+ 12:     LD  7,-1(1) 	return to caller
+* <- return
+* <- End Function
+* -> Init Function (double)
+ 13:     ST  0,-1(2) 	store return address from ac
+* -> Param
+* <- Param
+* -> return
+* -> Op
+* -> Id
+ 14:     LD  0,-2(2) 	load id value
+* <- Id
+ 15:     ST  0,-3(2) 	op: push left
+* -> Id
+ 16:     LD  0,-2(2) 	load id value
+* <- Id
+ 17:     LD  1,-3(2) 	op: load left
+ 18:    ADD  0,1,0 	op +
+* <- Op
+ 19:    LDA  1,0(2) 	save current fp into ac1
+ 20:     LD  2,0(2) 	make fp = ofp
+ 21:     LD  7,-1(1) 	return to caller
+* <- return
+* <- End Function
+* -> Init Function (main)
+  3:    LDA  7,18(7) 	jump to main
+* -> declare var
+* <- declare var
+* -> assign
+* -> Function Call (add)
+ 22:     ST  2,-3(2) 	Guard fp
+* -> Const
+ 23:    LDC  0,5(0) 	load const
+* <- Const
+ 24:     ST  0,-5(2) 	Store value of func argument
+* -> Function Call (double)
+ 25:     ST  2,-6(2) 	Guard fp
+* -> Const
+ 26:    LDC  0,3(0) 	load const
+* <- Const
+ 27:     ST  0,-8(2) 	Store value of func argument
+ 28:    LDA  2,-6(2) 	change fp
+ 29:    LDC  0,31(0) 	Guard return adress
+ 30:    LDA  7,-18(7) 	jump to function
+* <- Function Call
+ 31:     ST  0,-6(2) 	Store value of func argument
+ 32:    LDA  2,-3(2) 	change fp
+ 33:    LDC  0,35(0) 	Guard return adress
+ 34:    LDA  7,-31(7) 	jump to function
+* <- Function Call
+ 35:     ST  0,-2(2) 	assign: store value
+* <- assign
+* <- End Function
+* End of execution.
+ 36:   HALT  0,0,0 	

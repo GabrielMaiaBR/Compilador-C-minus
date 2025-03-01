@@ -1,0 +1,62 @@
+
+TINY COMPILATION: ../example/input.cm
+1: void main(void) {
+	1: reserved word: void
+	1: ID, name= main
+	1: (
+	1: reserved word: void
+	1: )
+	1: {
+2:     int x;
+	2: reserved word: int
+	2: ID, name= x
+	2: ;
+3:     x = input();
+	3: ID, name= x
+	3: =
+	3: ID, name= input
+	3: (
+	3: )
+	3: ;
+4: }
+	4: }
+	4: EOF
+
+Syntax tree:
+Declare function (return type "void"): main
+        Declare int var: x
+    Assign to var: x
+        Function call: input
+
+Building Symbol Table...
+
+Symbol table:
+
+Variable Name  Scope     ID Type  Data Type  Line Numbers
+-------------  --------  -------  ---------  -------------------------
+main                     fun      void        1 
+input                    fun      int         3 
+output                   fun      void       
+x              main      var      int         2  3 
+
+Checking Types...
+
+Type Checking Finished
+* TINY Compilation to TM Code
+* Standard prelude:
+  0:     LD  6,0(0) 	load maxaddress from location 0
+  1:     LD  2,0(0) 	load maxaddress from location 0
+  2:     ST  0,0(0) 	clear location 0
+* End of standard prelude.
+* -> Init Function (main)
+  3:    LDA  7,0(7) 	jump to main
+* -> declare var
+* <- declare var
+* -> assign
+* -> Function Call (input)
+  4:     IN  0,0,0 	read input
+  5:     ST  0,-2(2) 	assign: store value
+* <- assign
+* <- End Function
+* End of execution.
+  6:   HALT  0,0,0 	

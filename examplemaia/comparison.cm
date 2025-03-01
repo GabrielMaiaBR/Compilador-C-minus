@@ -1,0 +1,10 @@
+void main(void) {
+    int x;
+    x = 5;
+    if(x < 10) output(1);
+    if(x <= 5) output(1);
+    if(x > 3) output(1);
+    if(x >= 5) output(1);
+    if(x == 5) output(1);
+    if(x != 6) output(1);
+}

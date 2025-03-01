@@ -1,0 +1,6 @@
+Declare function (return type "void"): main
+        Declare int array: arr
+        Const: 5
+    Assign to array: arr
+        Const: 0
+        Const: 1

@@ -1,0 +1,36 @@
+1: void main(void) {
+	1: reserved word: void
+	1: ID, name= main
+	1: (
+	1: reserved word: void
+	1: )
+	1: {
+2:     int i;
+	2: reserved word: int
+	2: ID, name= i
+	2: ;
+3:     i = 0;
+	3: ID, name= i
+	3: =
+	3: NUM, val= 0
+	3: ;
+4:     while(i < 5) {
+	4: reserved word: while
+	4: (
+	4: ID, name= i
+	4: <
+	4: NUM, val= 5
+	4: )
+	4: {
+5:         i = i + 1;
+	5: ID, name= i
+	5: =
+	5: ID, name= i
+	5: +
+	5: NUM, val= 1
+	5: ;
+6:     }
+	6: }
+7: }
+	7: }
+	7: EOF

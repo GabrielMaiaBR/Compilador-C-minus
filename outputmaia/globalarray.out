@@ -1,0 +1,78 @@
+
+TINY COMPILATION: ../example/globalarray.cm
+1: int arr[10];
+	1: reserved word: int
+	1: ID, name= arr
+	1: [
+	1: NUM, val= 10
+	1: ]
+	1: ;
+2: void main(void) {
+	2: reserved word: void
+	2: ID, name= main
+	2: (
+	2: reserved word: void
+	2: )
+	2: {
+3:     arr[0] = 5;
+	3: ID, name= arr
+	3: [
+	3: NUM, val= 0
+	3: ]
+	3: =
+	3: NUM, val= 5
+	3: ;
+4: }
+	4: }
+	4: EOF
+
+Syntax tree:
+Declare int array: arr
+    Const: 10
+Declare function (return type "void"): main
+        Assign to array: arr
+        Const: 0
+        Const: 5
+
+Building Symbol Table...
+
+Symbol table:
+
+Variable Name  Scope     ID Type  Data Type  Line Numbers
+-------------  --------  -------  ---------  -------------------------
+main                     fun      void        2 
+input                    fun      int        
+output                   fun      void       
+arr                      array    int         1  3 
+
+Checking Types...
+
+Type Checking Finished
+* TINY Compilation to TM Code
+* Standard prelude:
+  0:     LD  6,0(0) 	load maxaddress from location 0
+  1:     LD  2,0(0) 	load maxaddress from location 0
+  2:     ST  0,0(0) 	clear location 0
+* End of standard prelude.
+* -> declare vector
+  3:    LDC  0,10(0) 	load global position to ac
+  4:    LDC  5,0(0) 	load 0
+  5:     ST  0,10(5) 	store ac in global_position_aux
+* <- declare vector
+* -> Init Function (main)
+  6:    LDA  7,0(7) 	jump to main
+* -> assign vector
+* -> Vector
+* -> Const
+  7:    LDC  0,5(0) 	load const
+* <- Const
+  8:    LDC  5,0(0) 	load 0
+  9:     LD  1,10(5) 	get the address of the vector
+ 10:    LDC  3,0(0) 	get the value of the index
+ 11:    LDC  4,1(0) 	load 1
+ 12:    ADD  3,3,4 	sub 3 by 1
+ 13:    SUB  1,1,3 	get the address
+ 14:     ST  0,0(1) 	get the value of the vector
+* <- End Function
+* End of execution.
+ 15:   HALT  0,0,0 	

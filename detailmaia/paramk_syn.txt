@@ -1,0 +1,4 @@
+Declare function (return type "void"): test
+    Function param (int var): x
+    Declare function (return type "void"): main
+    

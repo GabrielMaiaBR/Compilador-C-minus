@@ -1,0 +1,12 @@
+Declare function (return type "void"): main
+        Declare int var: i
+    Assign to var: i
+        Const: 0
+    Iteration (loop)
+        Op: <
+            Id: i
+            Const: 5
+                Assign to var: i
+            Op: +
+                Id: i
+                Const: 1

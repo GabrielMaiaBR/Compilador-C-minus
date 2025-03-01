@@ -1,0 +1,4 @@
+Declare function (return type "void"): main
+        Declare int var: x
+    Assign to var: x
+        Const: 5

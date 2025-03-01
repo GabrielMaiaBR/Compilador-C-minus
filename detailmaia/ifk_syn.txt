@@ -1,0 +1,10 @@
+Declare function (return type "void"): main
+        Declare int var: x
+    Assign to var: x
+        Const: 1
+    Conditional selection
+        Op: <
+            Id: x
+            Const: 2
+                Assign to var: x
+            Const: 3

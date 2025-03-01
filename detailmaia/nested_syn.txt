@@ -1,0 +1,20 @@
+Declare function (return type "int"): add
+    Function param (int var): x
+    Function param (int var): y
+        Return
+        Op: +
+            Id: x
+            Id: y
+Declare function (return type "int"): double
+    Function param (int var): x
+        Return
+        Op: +
+            Id: x
+            Id: x
+Declare function (return type "void"): main
+        Declare int var: x
+    Assign to var: x
+        Function call: add
+            Const: 5
+            Function call: double
+                Const: 3

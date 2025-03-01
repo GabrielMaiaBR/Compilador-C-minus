@@ -1,0 +1,5 @@
+Declare function (return type "int"): test
+        Return
+        Const: 0
+Declare function (return type "void"): main
+    

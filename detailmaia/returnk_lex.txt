@@ -1,0 +1,23 @@
+1: int test(void) {
+	1: reserved word: int
+	1: ID, name= test
+	1: (
+	1: reserved word: void
+	1: )
+	1: {
+2:     return 42;
+	2: reserved word: return
+	2: NUM, val= 42
+	2: ;
+3: }
+	3: }
+4: void main(void) {
+	4: reserved word: void
+	4: ID, name= main
+	4: (
+	4: reserved word: void
+	4: )
+	4: {
+5: }
+	5: }
+	5: EOF

@@ -1,0 +1,9 @@
+
+Symbol table:
+
+Variable Name  Scope     ID Type  Data Type  Line Numbers
+-------------  --------  -------  ---------  -------------------------
+main                     fun      void        1 
+input                    fun      int        
+output                   fun      void        4  5  6  7  8  9 
+x              main      var      int         2  3  4  5  6  7  8  9 

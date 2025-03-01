@@ -1,0 +1,62 @@
+1: int add(int x, int y) {
+	1: reserved word: int
+	1: ID, name= add
+	1: (
+	1: reserved word: int
+	1: ID, name= x
+	1: ,
+	1: reserved word: int
+	1: ID, name= y
+	1: )
+	1: {
+2:     return x + y;
+	2: reserved word: return
+	2: ID, name= x
+	2: +
+	2: ID, name= y
+	2: ;
+3: }
+	3: }
+4: int double(int x) {
+	4: reserved word: int
+	4: ID, name= double
+	4: (
+	4: reserved word: int
+	4: ID, name= x
+	4: )
+	4: {
+5:     return x + x;
+	5: reserved word: return
+	5: ID, name= x
+	5: +
+	5: ID, name= x
+	5: ;
+6: }
+	6: }
+7: void main(void) {
+	7: reserved word: void
+	7: ID, name= main
+	7: (
+	7: reserved word: void
+	7: )
+	7: {
+8:     int x;
+	8: reserved word: int
+	8: ID, name= x
+	8: ;
+9:     x = add(5, double(3));
+	9: ID, name= x
+	9: =
+	9: ID, name= add
+	9: (
+	9: NUM, val= 5
+	9: ,
+	9: ID, name= double
+	9: (
+	9: NUM, val= 3
+	9: )
+	9: )
+	9: ;
+10: }
+	10: }
+	10: EOF

@@ -1,0 +1,7 @@
+Declare function (return type "void"): test
+    Function param (int var): x
+        Function call: output
+        Id: x
+Declare function (return type "void"): main
+        Function call: test
+        Const: 42

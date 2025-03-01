@@ -1,0 +1,10 @@
+int add(int x, int y) {
+    return x + y;
+}
+int double(int x) {
+    return x + x;
+}
+void main(void) {
+    int x;
+    x = add(5, double(3));
+}

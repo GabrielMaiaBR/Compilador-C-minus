@@ -1,0 +1,2 @@
+Declare function (return type "void"): main
+        Declare int var: x

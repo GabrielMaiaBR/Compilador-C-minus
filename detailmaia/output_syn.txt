@@ -1,0 +1,3 @@
+Declare function (return type "void"): main
+        Function call: output
+        Const: 42
