@@ -136,8 +136,7 @@ static void insertNode(TreeNode* node) {
 					}
 					break;
 				}
-				case ParamK:
-				case ParamVetK: {
+				case ParamK: {
 					if (!st_lookup_no_parent(node->attr.name)) {
 						if (strcmp(current_scope->name, "global") == 0) {
 							st_insert(node->attr.name, node->kind.stmt, current_scope->name,

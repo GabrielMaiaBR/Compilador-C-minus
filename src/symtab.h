@@ -17,6 +17,7 @@ extern Scope scope_list;
 void st_insert(char* name, StmtKind kind, char* scope, ExpType type, int lineno, int memloc, bool isArray);
 SymbolList st_lookup(char* name);
 SymbolList st_lookup_no_parent(char* name);
+SymbolList st_lookup_from_given_scope(char* name, Scope scope);
 void st_add_lineno(char* name, int lineno);
 
 void printSymTab(void);
