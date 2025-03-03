@@ -3,8 +3,8 @@ void teste (int b, int a) {
   output(a);
   output(b);
   { int a;
-    a = 3;
     int b;
+    a = 3;
     b = 4;
     output(a);
     output(b);
@@ -15,8 +15,8 @@ void teste (int b, int a) {
 
 void main(void) {
   int a;
-  a = 1;
   int b;
+  a = 1;
   b = 2;
   teste(a,b);
   output(a);
