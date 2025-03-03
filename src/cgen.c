@@ -79,7 +79,7 @@ static void genStmt(TreeNode *tree)
             sprintf(comment, "-> Init Function (%s)", tree->attr.name);
             emitComment(comment);
 
-            int funcLoc = emitSkip(0); // Salva a posição da função
+            const int funcLoc = emitSkip(0); // Salva a posição da função
 
             if (first_funk) {
                 main_loc = emitSkip(1);
@@ -133,6 +133,25 @@ static void genStmt(TreeNode *tree)
         // Modified
         case VarK:
         {
+            if (tree->isArray)
+            {
+                emitComment("-> declare vector");
+                if(strcmp(tree->scope->name, "global") == 0) {
+                SymbolList vecSymbol = st_lookup_from_given_scope(tree->attr.name, tree->scope);
+                int memloc = vecSymbol->memloc;
+                emitRM("LDC", ac, memloc, 0, "load global position to ac");
+                emitRM("LDC", r5, 0, 0, "load 0");
+                emitRM("ST", ac, memloc, r5, "store ac in global_position_aux");
+                emitComment("<- declare vector");
+                break;
+            }
+            emitRM("LDA", ac, tempOffset, fp, "guard vector address");
+            emitRM("ST", ac, tempOffset, ac, "store vector address");
+            tempOffset -= tree->child[0]->attr.val + 1;
+            emitComment("<- declare vector");
+            break;
+            }
+            
             emitComment("-> declare var");
             tempOffset--;
             emitComment("<- declare var");
@@ -205,7 +224,7 @@ static void genStmt(TreeNode *tree)
 
             /* Ajusta o salto para o bloco "else" */
             emitBackup(jumpElse);
-            emitRM("JEQ", ac,jumpEnd + 1 , PC, "if: jmp to else");
+            emitRM_Abs("JEQ", ac,jumpEnd + 1 , "if: jmp to else");
             emitRestore();
 
             /* Gera código para o bloco "else" (se existir) */
@@ -214,7 +233,7 @@ static void genStmt(TreeNode *tree)
             /* Ajusta o salto para o fim do `if` */
             int endLoc = emitSkip(0); // Posição atual será o fim do if
             emitBackup(jumpEnd);
-            emitRM("LDA", PC, endLoc, PC, "jmp to end");
+            emitRM_Abs("LDA", PC, endLoc, "jmp to end");
             emitRestore();
 
             if (TraceCode)
@@ -290,10 +309,10 @@ static void genExp(TreeNode *tree)
         p2 = tree->child[1];
         cGen(p1);
         // printf("DEBUG: Operação '%d' -> Primeiro operando (AC) = %d\n", tree->attr.op, ac);
-        emitRM("ST", ac, --tempOffset, fp, "op: push left");
+        emitRM("ST", ac, tempOffset--, fp, "op: push left");
         cGen(p2);
         // printf("DEBUG: Operação '%d' -> Segundo operando (AC) = %d\n", tree->attr.op, ac);
-        emitRM("LD", ac1, tempOffset++, fp, "op: load left");
+        emitRM("LD", ac1, ++tempOffset, fp, "op: load left");
         switch (tree->attr.op)
         {
         case PLUS:
@@ -517,7 +536,7 @@ static void genExp(TreeNode *tree)
             // Para inverter o sinal, você pode carregar 0 em outro registrador
             // e subtrair o valor avaliado.
             emitRM("LDC", ac1, 0, 0, "load 0 for unary minus");
-            emitRO("SUB", ac1, ac1, ac, "compute unary minus");
+            emitRO("SUB", ac, ac1, ac, "compute unary minus");
             // Se necessário, mova o resultado de ac1 para ac (ou ajuste a convenção dos registradores)
             // Por exemplo: emitRO("ADD", ac, ac1, 0, "move result to ac");
             // Dependendo da sua máquina, você pode querer deixar o resultado em ac diretamente.
@@ -572,7 +591,7 @@ void codeGen(TreeNode *syntaxTree)
     // 🔹 Mensagem indicando o fim da configuração inicial
     emitComment("End of standard prelude.");
 
-    // emitSkip(1);
+    emitSkip(1);
 
     currentScopeName = "global";
     cGen(syntaxTree);
