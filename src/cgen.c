@@ -61,9 +61,9 @@ static bool isParamFuncall = FALSE;
 
 static int numberOfCompoundScopes = 0;
 
-int main_loc = 3;
+static int main_loc = 3;
 
-bool first_funk = FALSE;
+static bool first_funk = TRUE;
 
 /* Geração de código para nós de declaração (StmtK) */
 static void genStmt(TreeNode *tree)
@@ -139,9 +139,10 @@ static void genStmt(TreeNode *tree)
                 if(strcmp(tree->scope->name, "global") == 0) {
                 SymbolList vecSymbol = st_lookup_from_given_scope(tree->attr.name, tree->scope);
                 int memloc = vecSymbol->memloc;
-                emitRM("LDC", ac, memloc, 0, "load global position to ac");
+                int vecSize = tree->child[0]->attr.val;
+                emitRM("LDC", ac, vecSize, 0, "load global position to ac");
                 emitRM("LDC", r5, 0, 0, "load 0");
-                emitRM("ST", ac, memloc, r5, "store ac in global_position_aux");
+                emitRM("ST", ac, vecSize, r5, "store ac in global_position_aux");
                 emitComment("<- declare vector");
                 break;
             }
@@ -261,12 +262,12 @@ static void genStmt(TreeNode *tree)
             cGen(tree->child[1]);
 
             /* 🔹 5. Volta para a condição do while */
-            emitRM("LDA", PC, whileCondLoc, PC, "jump to savedLoc1");
+            emitRM_Abs("LDA", PC, whileCondLoc, "jump to savedLoc1");
 
             /* 🔹 6. Ajusta o salto de saída do loop */
             int whileEndLoc = emitSkip(0);
             emitBackup(whileExitLoc);
-            emitRM("JEQ", ac, whileEndLoc, PC, "repeat: jmp to end");
+            emitRM_Abs("JEQ", ac, whileEndLoc, "repeat: jmp to end");
             emitRestore();
 
             if (TraceCode)
@@ -412,13 +413,13 @@ static void genExp(TreeNode *tree)
             else
             {
                 SymbolList indexSymbol = st_lookup_from_given_scope(p1->attr.name, p1->scope);
-                emitRM("LD", r3, indexSymbol->memloc - MAX_MEM, fp, "load array index");
+                emitRM("LD", r3, indexSymbol->memloc - MAX_MEM, fp, "get the value of the index");
             }
 
             emitRM("LDC", r4, 1, 0, "load 1");
             emitRO("ADD", r3, r3, r4, "sub 3 by 1");
-            emitRO("SUB", ac1, ac1, r3, "get the address");
-            emitRM("ST", ac, 0, ac1, "get the value of the vector");
+            emitRO("SUB", ac, ac, r3, "get the address");
+            emitRM("LD", ac, 0, ac, "get the value of the vector");
         }
         else
         {
@@ -438,14 +439,14 @@ static void genExp(TreeNode *tree)
 
     // Modified
     case AssignK: {
-        emitComment("-> assign");
+        emitComment("-> assign"); // Avalia o lado direito da atribuição
 
-        cGen(tree->child[1]); // Avalia o lado direito da atribuição
-
-        SymbolList assignSymbol = st_lookup_from_given_scope(tree->child[0]->attr.name, tree->child[0]->scope);
-        if (tree->isArray)
+        
+        if (tree->child[0]->isArray)
         {
             emitComment("-> Vector");
+            cGen(tree->child[1]);
+            SymbolList assignSymbol = st_lookup_from_given_scope(tree->child[0]->attr.name, tree->child[0]->scope);
             if (strcmp(assignSymbol->scope, "global") == 0)
             {
                 emitRM("LDC", r5, 0, 0, "load 0");
@@ -464,7 +465,7 @@ static void genExp(TreeNode *tree)
             else
             {
                 SymbolList indexSymbol = st_lookup_from_given_scope(p1->attr.name, p1->scope);
-                emitRM("LD", r3, indexSymbol->memloc - MAX_MEM, fp, "load array index");
+                emitRM("LD", r3, indexSymbol->memloc - MAX_MEM, fp, "get the value of the index");
             }
 
             emitRM("LDC", r4, 1, 0, "load 1");
@@ -477,7 +478,9 @@ static void genExp(TreeNode *tree)
         }
         else
         {
-            emitRM("ST", ac, assignSymbol->memloc - MAX_MEM, fp, "store value");
+            cGen(tree->child[1]);
+            SymbolList assignSymbol = st_lookup_from_given_scope(tree->child[0]->attr.name, tree->child[0]->scope);
+            emitRM("ST", ac, assignSymbol->memloc - MAX_MEM, fp, "assign: store value");
         }
         emitComment("<- assign");
         break;
@@ -591,7 +594,7 @@ void codeGen(TreeNode *syntaxTree)
     // 🔹 Mensagem indicando o fim da configuração inicial
     emitComment("End of standard prelude.");
 
-    emitSkip(1);
+    // emitSkip(1);
 
     currentScopeName = "global";
     cGen(syntaxTree);
