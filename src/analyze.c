@@ -108,8 +108,15 @@ static void insertNode(TreeNode* node) {
 					}
 					if (st_lookup_no_parent(node->attr.name) == NULL) {
 						if (strcmp(current_scope->name, "global") == 0) {
-							st_insert(node->attr.name, VarK, current_scope->name, node->type,
-									  node->lineno, globaloffset++, node->isArray);
+							if(node->isArray) {
+								globaloffset += node->child[0]->attr.val;
+								st_insert(node->attr.name, VarK, current_scope->name, node->type,
+									node->lineno, globaloffset++, node->isArray);
+							}
+							else {
+								st_insert(node->attr.name, VarK, current_scope->name, node->type,
+									node->lineno, globaloffset++, node->isArray);
+							}
 						} else {
 							st_insert(node->attr.name, VarK, current_scope->name, node->type,
 									  node->lineno, localoffset--, node->isArray);
