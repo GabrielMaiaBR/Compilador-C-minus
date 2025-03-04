@@ -27,13 +27,13 @@ void printLine() {
 		rewind(redundant_source);
 		first = 0;
 	}
-	const char* ret = fgets(line, sizeof(line), redundant_source);
-	if (ret) {
+	if (fgets(line, sizeof(line), redundant_source)) {
 		current++;
 		pc("%d: %s", current, line);
 
 		if (feof(redundant_source)) {
-			if (line[strlen(line) - 1] != '\n') {
+			size_t line_len = strlen(line);
+			if (line[line_len - 1] != '\n') {
 				pc("\n");
 			}
 		}
@@ -127,7 +127,7 @@ void printToken(TokenType token, const char* tokenString) {
 
 TreeNode* newStmtNode(StmtKind kind) {
 	TreeNode* t = (TreeNode*) malloc(sizeof(TreeNode));
-	int       i;
+	int i;
 	if (t == NULL)
 		pc("Out of memory error at line %d\n", lineno);
 	else {
@@ -142,7 +142,7 @@ TreeNode* newStmtNode(StmtKind kind) {
 
 TreeNode* newExpNode(ExpKind kind) {
 	TreeNode* t = (TreeNode*) malloc(sizeof(TreeNode));
-	int       i;
+	int i;
 	if (t == NULL)
 		pc("Out of memory error at line %d\n", lineno);
 	else {
@@ -173,14 +173,12 @@ void printTree(TreeNode* tree) {
     int i;
     while (tree != NULL) {
         if (tree->kind.stmt == CompoundK && tree->nodekind == StmtK) {
-            // Para CompoundK, apenas percorre os filhos sem imprimir mensagem ou indentação extra
             for (i = 0; i < MAXCHILDREN; i++) {
                 if (tree->child[i] != NULL) {
                     printTree(tree->child[i]);
                 }
             }
         } else {
-            // Imprime a indentação sempre (não depende de indentno > 0)
             printSpaces();
 
             if (tree->nodekind == StmtK) {
@@ -192,7 +190,6 @@ void printTree(TreeNode* tree) {
                            tree->attr.name);
                         break;
                     case VarK:
-                        // Se a variável for um array (isArray==TRUE), imprime "array"; caso contrário, "var"
                         pc("Declare %s %s: %s\n",
                            tree->type == Integer ? "int" :
                            tree->type == Void  ? "void" : "ERROR",
@@ -200,14 +197,12 @@ void printTree(TreeNode* tree) {
                            tree->attr.name);
                         break;
                     case VetK:
-                        // Se houver uso de VetK, pode ser tratado aqui
                         pc("Declare %s array: %s\n",
                            tree->type == Integer ? "int" :
                            tree->type == Void  ? "void" : "ERROR",
                            tree->attr.name);
                         break;
 					case ParamK:
-						// Se o parâmetro for array (isArray == TRUE), imprima "array", caso contrário "var".
 						pc("Function param (%s %s): %s\n",
 						   tree->type == Integer ? "int"
 						   : tree->type == Void  ? "void" : "ERROR",
@@ -278,7 +273,6 @@ void printTree(TreeNode* tree) {
                         break;
                 }
                 INDENT;
-                // Ao imprimir os filhos do nó de atribuição, pula o índice 0 para não duplicar o nó já processado.
                 for (i = 0; i < MAXCHILDREN; i++) {
                     if (tree->nodekind == ExpK && tree->kind.exp == AssignK && i == 0)
                         continue;

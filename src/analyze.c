@@ -10,20 +10,20 @@ bool mainIsDefined = FALSE;
 
 bool fromFunction = FALSE;
 
-int localoffset = MAX_MEM - 2;
+int localoffset = MEMORY_SIZE - 2;
 
 int globaloffset = 0;
 
-static int CompoundScopesNum = 0;
+int compoundTracker = 0;
 
 static int location = 0;
-// ok
+
 void enterNewScope(char* scopeName) {
 	Scope newScope   = malloc(sizeof(struct Scope));
 	newScope->parent = current_scope;
 	newScope->name   = strdup(scopeName);
 	newScope->next   = NULL;
-	for (int i = 0; i < HASH_SIZE; i++) {
+	for (int i = 0; i < SIZE; i++) {
 		newScope->hashTable[i] = NULL;
 	}
 	if (scope_list == NULL) {
@@ -38,7 +38,6 @@ void enterNewScope(char* scopeName) {
 	current_scope = newScope;
 }
 
-// ok
 void exitScope(TreeNode* tree) {
 	if (tree->nodekind == StmtK) {
 		if (tree->kind.stmt == CompoundK) {
@@ -59,7 +58,6 @@ static void semanticError(TreeNode* node, const char* format, ...) {
 	Error = TRUE;
 }
 
-// ok
 static void traverse(TreeNode* tree, void (*preProcess)(TreeNode*),
                      void (*postProcess)(TreeNode*)) {
 	if (tree != NULL) {
@@ -73,34 +71,32 @@ static void traverse(TreeNode* tree, void (*preProcess)(TreeNode*),
 		traverse(tree->sibling, preProcess, postProcess);
 	}
 }
-// ok
+
 static void nullProc(TreeNode* node) {
-	return;
+	if (node==NULL) return;
+  	else return;
 }
 
-// conferir
 static void insertNode(TreeNode* node) {
 	node->scope = current_scope;
 	switch (node->nodekind) {
 		case StmtK:
 			switch (node->kind.stmt) {
-				// OK
 				case FunK: {
 					fromFunction = true;
 					if (strcmp(node->attr.name, "main") == 0) {
 						mainIsDefined = true;
 					}
-					localoffset = MAX_MEM - 2;
+					localoffset = MEMORY_SIZE - 2;
 					if (st_lookup(node->attr.name)) {
 						semanticError(node, "Function '%s' already declared", node->attr.name);
 					} else {
 						st_insert(node->attr.name, FunK, "global", node->type, node->lineno,
-								  MAX_MEM - 1, false);
-						enterNewScope(node->attr.name); // Entra no escopo da função
+							MEMORY_SIZE - 1, false);
+						enterNewScope(node->attr.name); 
 					}
 					break;
 				}
-				// ok
 				case VarK: {
 					if (node->type == Void) {
 						semanticError(node, "Variable declared as void");
@@ -108,23 +104,18 @@ static void insertNode(TreeNode* node) {
 					}
 					if (st_lookup_no_parent(node->attr.name) == NULL) {
 						if (strcmp(current_scope->name, "global") == 0) {
-							if(node->isArray) {
-								globaloffset += node->child[0]->attr.val;
-								st_insert(node->attr.name, VarK, current_scope->name, node->type,
-									node->lineno, globaloffset++, node->isArray);
-							}
-							else {
-								st_insert(node->attr.name, VarK, current_scope->name, node->type,
-									node->lineno, globaloffset++, node->isArray);
-							}
+							globaloffset += node->child[0]->attr.val;
+							st_insert(node->attr.name, VarK, current_scope->name, node->type,
+								node->lineno, globaloffset, node->isArray);
+								globaloffset += 1;
 						} else {
 							st_insert(node->attr.name, VarK, current_scope->name, node->type,
-									  node->lineno, localoffset--, node->isArray);
+									  node->lineno, localoffset, node->isArray);
+									  localoffset -= 1;
 						}
 					}
 					break;
 				}
-				// ok
 				case VetK: {
 					if (node->type == Void) {
 						semanticError(node, "Variable declared as void");
@@ -165,9 +156,9 @@ static void insertNode(TreeNode* node) {
 					if (strcmp(current_scope->name, "global") == 0) {
 						break;
 					}
-					CompoundScopesNum++;
+					compoundTracker++;
 					char newScope[20];
-					sprintf(newScope, "compound%d", CompoundScopesNum);
+					sprintf(newScope, "compound%d", compoundTracker);
 					enterNewScope(newScope);
 					node->attr.name = strdup(newScope);
 					break;
@@ -196,7 +187,6 @@ static void insertNode(TreeNode* node) {
 	}
 }
 
-// ok
 static void checkNode(TreeNode* node) {
 	switch (node->nodekind) {
 		case ExpK:
@@ -267,7 +257,6 @@ static void checkNode(TreeNode* node) {
 	}
 }
 
-// ok
 void buildSymtab(TreeNode* syntaxTree) {
 	enterNewScope("global");
 	st_insert("input", FunK, "global", Integer, -1, location++, FALSE);
@@ -281,7 +270,6 @@ void buildSymtab(TreeNode* syntaxTree) {
 	}
 }
 
-// ok
 void typeCheck(TreeNode* syntaxTree) {
 	if (!mainIsDefined) {
 		semanticError(syntaxTree, "main function not defined");

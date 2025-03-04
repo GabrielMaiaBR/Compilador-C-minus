@@ -51,8 +51,8 @@ int yyerror(char *);
 %type <node>  local_decl list_stmt stmt
 %type <node>  exp_decl selection_decl iteration_decl return_decl
 %type <node>  exp simple_exp sum_exp var
-%type <node>  term factor func_activation args args_list unary_exp
-%type <token> sum mult relational unary_op
+%type <node>  term factor func_activation args args_list 
+%type <token> sum mult relational 
 %type <type>  type_sp 
 
 %% /* Grammar for CMINUS */
@@ -307,7 +307,7 @@ sum:
         { $$ = MINUS; }
     ;
 
-term      : term mult unary_exp
+term      : term mult factor
             {
               $$ = newExpNode(OpK);
               $$->child[0] = $1;
@@ -315,28 +315,8 @@ term      : term mult unary_exp
               $$->attr.op = $2;
               $$->lineno = lineno;
             }
-          | unary_exp { $$ = $1; }
+          | factor { $$ = $1; }
           ;
-          
-unary_exp:
-    unary_op unary_exp
-        {
-            $$ = newExpNode(UnaryK);
-            $$->child[0] = $2;
-            $$->child[1] = NULL;
-            $$->attr.op = $1;
-            $$->lineno = lineno;
-        }
-    | factor
-        { $$ = $1; }
-    ;
-
-unary_op:
-    MINUS
-        { $$ = MINUS; }
-    | PLUS
-        { $$ = PLUS; }
-    ;
 
 mult:
     TIMES

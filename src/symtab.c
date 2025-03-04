@@ -11,11 +11,12 @@ static int hash(char* key) {
 	int temp = 0;
 	int i    = 0;
 	while (key[i] != '\0') {
-		temp = ((temp << SHIFT) + key[i]) % HASH_SIZE;
+		temp = ((temp << SHIFT) + key[i]) % SIZE;
 		++i;
 	}
 	return temp;
 }
+
 
 void st_insert(char* name, StmtKind kind, char* scope, ExpType type, int lineno, int memloc,
                bool isArray) {
@@ -116,60 +117,21 @@ SymbolList st_lookup_from_given_scope(char* name, Scope scope) {
 	return NULL;
 }
 
-static const char* getStmtKindString(StmtKind kind) {
-	switch (kind) {
-		case FunK:
-			return "fun";
-		case VarK:
-			return "var";
-		case VetK:
-			return "array";
-		case ParamK:
-			return "var";
-		case ParamVetK:
-			return "array";
-		case CompoundK:
-			return "compound";
-		default:
-			return "unknown";
-	}
-}
-
-static const char* getExpTypeString(ExpType type) {
-	switch (type) {
-		case Void:
-			return "void";
-		case Integer:
-			return "int";
-		default:
-			return "unknown";
-	}
-}
-
-// TODO: refactor everything
 void printSymTab(void) {
-    // Cabeçalho conforme o formato esperado
     pc("Variable Name  Scope     ID Type  Data Type  Line Numbers\n");
     pc("-------------  --------  -------  ---------  -------------------------\n");
 
-    // Percorre cada escopo na lista
     for (Scope sc = scope_list; sc != NULL; sc = sc->next) {
-        // Para cada índice da tabela hash do escopo atual
-        for (int i = 0; i < HASH_SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             SymbolList sym = sc->hashTable[i];
-            // Percorre a lista de símbolos neste bucket
             while (sym != NULL) {
-                // Imprime o nome do símbolo
                 pc("%-14s ", sym->name);
                 
-                // Se o símbolo pertence ao escopo "global", imprime vazio; caso contrário, o nome do escopo
                 if (strcmp(sym->scope, "global") == 0)
                     pc("%-10s ", "");
                 else
                     pc("%-10s ", sym->scope);
                 
-                // Determina a coluna "ID Type" conforme o tipo de símbolo e flag isArray:
-                // Para funções, imprime "fun"; para variáveis, se for array (ou VetK ou ParamVetK) imprime "array", caso contrário "var"
                 char idType[10];
                 if (sym->kind == FunK)
                     strcpy(idType, "fun");
@@ -181,10 +143,8 @@ void printSymTab(void) {
                     strcpy(idType, "unknown");
                 pc("%-7s ", idType);
                 
-                // Imprime o "Data Type": int para Integer, void para Void
                 pc("%-9s  ", (sym->type == Integer ? "int" : "void"));
-                
-                // Imprime os números das linhas onde o símbolo aparece
+
                 LineList lines = sym->lines;
                 while (lines != NULL) {
                     if (lines->lineno > 0)

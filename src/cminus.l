@@ -26,7 +26,7 @@ WHITESPACE      [ \t]+
 COMMENT         "/*"([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+"/"
 
 %%
-{COMMENT}       { /* Processar cada newline no comentário para contar linhas */
+{COMMENT}       { 
                   char *s;
                   for (s = yytext; *s; s++) {
                       if (*s == '\n') {
@@ -46,27 +46,27 @@ COMMENT         "/*"([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+"/"
 "*"             { return TIMES; }
 "/"             { return OVER; }
 "<"             { return LT; }
-"<="            { return LTE; }  /* Mudado de LEQ para LTE */
+"<="            { return LTE; }  
 ">"             { return GT; }
-">="            { return GTE; }  /* Mudado de GEQ para GTE */
-"=="            { return EQ; }   /* Mudado de EQEQ para EQ */
-"!="            { return NEQ; }  /* Mudado de INEQ para NEQ */
-"="             { return ASSIGN; }  /* Mudado de EQ para ASSIGN */
+">="            { return GTE; }  
+"=="            { return EQ; }   
+"!="            { return NEQ; }  
+"="             { return ASSIGN; }  
 ";"             { return SEMI; }
 ","             { return COMMA; }
 "("             { return LPAREN; }
 ")"             { return RPAREN; }
-"["             { return LBRACKET; }  /* Mudado de LBRACKETS */
-"]"             { return RBRACKET; }  /* Mudado de RBRACKETS */
-"{"             { return LBRACE; }    /* Mudado de LCBRACES */
-"}"             { return RBRACE; }    /* Mudado de RCBRACES */
+"["             { return LBRACKET; }  
+"]"             { return RBRACKET; }  
+"{"             { return LBRACE; }    
+"}"             { return RBRACE; }    
 {NUMBER}        { yylval.val = atoi(yytext); return NUM; }
 {IDENTIFIER}    { yylval.name = strdup(yytext); return ID; }
 {NEWLINE}       { 
                   lineno++; 
                   printLine();
                 }
-{WHITESPACE}    { /* pular espaços em branco */ }
+{WHITESPACE}    { /* skip whitespace */ }
 .               { return ERROR; }
 
 %%

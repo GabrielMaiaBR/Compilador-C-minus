@@ -12,5 +12,5 @@ void main(void) {
   int x;
   x = input();
   if (x >= 0) binario(x);
-  else binario(-x);
+  else binario(0-x);
 }

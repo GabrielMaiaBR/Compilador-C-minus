@@ -17,14 +17,14 @@ typedef struct HashNode {
     struct HashNode* next;
 } HashNode;
 
-static HashNode* hashTable[HASH_SIZE];
+static HashNode* hashTable[SIZE];
 
 static int get_hash_value(const char* key) {
     int hash = 0;
     while (*key) {
         hash = (hash << SHIFT) + *key++;
     }
-    return hash % HASH_SIZE;
+    return hash % SIZE;
 }
 
 static void add(const char* key, int value) {
@@ -48,38 +48,33 @@ static int get(const char* key) {
     return -1; // Key not found
 }
 
-/* Offset para armazenamento temporário;
-   para uma implementação mais completa, esse valor poderá ser calculado a partir da tabela de símbolos */
 static int tempOffset = -2;
 
-/* Protótipo da função recursiva */
 static void cGen(TreeNode *tree);
 
 static char *currentScopeName = "global";
 
-static bool isParamFuncall = FALSE;
+bool isParamFuncall = FALSE;
 
-static int numberOfCompoundScopes = 0;
+static int compoundTracker = 0;
 
-static int main_loc = 3;
+int main_loc = 3;
 
-static bool first_funk = TRUE;
+bool first_funk = TRUE;
 
-/* Geração de código para nós de declaração (StmtK) */
 static void genStmt(TreeNode *tree)
 {
     TreeNode *p1, *p2, *p3;
-    int savedLoc1, savedLoc2, currentLoc;
+    int savedLoc1, savedLoc2;
 
     switch (tree->kind.stmt) {
-        // Modified
         case FunK:
         {
             char comment[40];
             sprintf(comment, "-> Init Function (%s)", tree->attr.name);
             emitComment(comment);
 
-            const int funcLoc = emitSkip(0); // Salva a posição da função
+            const int funcLoc = emitSkip(0); 
 
             if (first_funk) {
                 main_loc = emitSkip(1);
@@ -89,11 +84,9 @@ static void genStmt(TreeNode *tree)
                 add(tree->attr.name, funcLoc);
             }
 
-            // 🔹 Ajusta FP e empilha endereço de retorno, se não for `main`
             currentScopeName = tree->attr.name;
             tempOffset = -2;
 
-            // 🔹 Se for a `main()`, armazenamos `main_loc`
             if (strcmp(tree->attr.name, "main") == 0)
             {
                 savedLoc1 = emitSkip(0);
@@ -104,9 +97,8 @@ static void genStmt(TreeNode *tree)
                     emitRM_Abs("LDA", PC, savedLoc1, "jump to main");
                 emitRestore();
 
-                // 🔹 Processa os parâmetros e o corpo da função
-                cGen(tree->child[0]); // Parâmetros
-                cGen(tree->child[1]); // Corpo
+                cGen(tree->child[0]); 
+                cGen(tree->child[1]); 
 
                 emitComment("<- End Function");
                 break;
@@ -114,11 +106,9 @@ static void genStmt(TreeNode *tree)
 
             emitRM("ST", ac, -1, fp, "store return address from ac");
 
-            // 🔹 Processa os parâmetros e o corpo da função
-            cGen(tree->child[0]); // Parâmetros
-            cGen(tree->child[1]); // Corpo
+            cGen(tree->child[0]); 
+            cGen(tree->child[1]); 
 
-            // 🔹 Se a função for `void`, restaura `fp` e retorna ao chamador
             if (tree->type == Void)
             {
                 emitRM("LDA", ac1, 0, fp, "save current fp into ac1");
@@ -130,7 +120,6 @@ static void genStmt(TreeNode *tree)
             break;
         }
 
-        // Modified
         case VarK:
         {
             if (tree->isArray)
@@ -159,7 +148,6 @@ static void genStmt(TreeNode *tree)
             break;
         }
 
-        // Modified
         case VetK: {
             emitComment("-> declare vector");
             if(strcmp(tree->scope->name, "global") == 0) {
@@ -189,22 +177,16 @@ static void genStmt(TreeNode *tree)
         {
             emitComment("-> Compound Statement");
 
-            sprintf(currentScopeName, "compound%d", numberOfCompoundScopes);
+            sprintf(currentScopeName, "compound%d", compoundTracker);
 
-            if (tree->child[0]) {
-                cGen(tree->child[0]);
-            }
-
-            // Statements list
-            if (tree->child[1]) {
-                cGen(tree->child[1]);
-            }
+            cGen(tree->child[0]);
+            cGen(tree->child[1]);
+            
 
             emitComment("<- Compound Statement");
             break;
         }
 
-        // Modified
         case IfK: {
             if (TraceCode)
                 emitComment("-> if");
@@ -229,7 +211,8 @@ static void genStmt(TreeNode *tree)
             emitRestore();
 
             /* Gera código para o bloco "else" (se existir) */
-            cGen(tree->child[2]);
+            if(tree->child[2])
+                cGen(tree->child[2]);
 
             /* Ajusta o salto para o fim do `if` */
             int endLoc = emitSkip(0); // Posição atual será o fim do if
@@ -242,7 +225,6 @@ static void genStmt(TreeNode *tree)
             break;
         }
 
-        // ok
         case IteraK: {
             if (TraceCode)
                 emitComment("-> while");
@@ -278,10 +260,7 @@ static void genStmt(TreeNode *tree)
         case ReturnK: {
             emitComment("-> return");
 
-            if (tree->child[0] != NULL)
-            {
-                cGen(tree->child[0]);
-            }
+            cGen(tree->child[0]);
 
             emitRM("LDA", ac1, 0, fp, "save current fp into ac1");
             emitRM("LD", fp, 0, fp, "make fp = ofp");
@@ -296,13 +275,11 @@ static void genStmt(TreeNode *tree)
     }
 }
 
-/* Geração de código para nós de expressão (ExpK) */
 static void genExp(TreeNode *tree)
 {
     TreeNode *p1, *p2;
     switch (tree->kind.exp)
     {
-    // ok
     case OpK: {
         if (TraceCode)
             emitComment("-> Op");
@@ -379,7 +356,6 @@ static void genExp(TreeNode *tree)
         break;
     }
 
-    // ok
     case ConstK: {
         emitComment(" -> Const");
         emitRM("LDC", ac, tree->attr.val, 0, "load const");
@@ -387,7 +363,6 @@ static void genExp(TreeNode *tree)
         break;
     }
 
-    // Modified
     case IdK: {
         emitComment("-> Id");
 
@@ -402,7 +377,7 @@ static void genExp(TreeNode *tree)
             }
             else
             {
-                emitRM("LD", ac, varSymbol->memloc - MAX_MEM, fp, "get the address of the vector");
+                emitRM("LD", ac, varSymbol->memloc - MEMORY_SIZE, fp, "get the address of the vector");
             }
 
             p1 = tree->child[0];
@@ -413,7 +388,7 @@ static void genExp(TreeNode *tree)
             else
             {
                 SymbolList indexSymbol = st_lookup_from_given_scope(p1->attr.name, p1->scope);
-                emitRM("LD", r3, indexSymbol->memloc - MAX_MEM, fp, "get the value of the index");
+                emitRM("LD", r3, indexSymbol->memloc - MEMORY_SIZE, fp, "get the value of the index");
             }
 
             emitRM("LDC", r4, 1, 0, "load 1");
@@ -430,16 +405,15 @@ static void genExp(TreeNode *tree)
             }
             else
             {
-                emitRM("LD", ac, varSymbol->memloc - MAX_MEM, fp, "load id value");
+                emitRM("LD", ac, varSymbol->memloc - MEMORY_SIZE, fp, "load id value");
             }
         }
         emitComment("<- Id");
         break;
     }
 
-    // Modified
     case AssignK: {
-        emitComment("-> assign"); // Avalia o lado direito da atribuição
+        emitComment("-> assign"); 
 
         
         if (tree->child[0]->isArray)
@@ -454,7 +428,7 @@ static void genExp(TreeNode *tree)
             }
             else
             {
-                emitRM("LD", ac1, assignSymbol->memloc - MAX_MEM, fp, "get the address of the vector");
+                emitRM("LD", ac1, assignSymbol->memloc - MEMORY_SIZE, fp, "get the address of the vector");
             }
 
             p1 = tree->child[0]->child[0];
@@ -465,7 +439,7 @@ static void genExp(TreeNode *tree)
             else
             {
                 SymbolList indexSymbol = st_lookup_from_given_scope(p1->attr.name, p1->scope);
-                emitRM("LD", r3, indexSymbol->memloc - MAX_MEM, fp, "get the value of the index");
+                emitRM("LD", r3, indexSymbol->memloc - MEMORY_SIZE, fp, "get the value of the index");
             }
 
             emitRM("LDC", r4, 1, 0, "load 1");
@@ -480,7 +454,7 @@ static void genExp(TreeNode *tree)
         {
             cGen(tree->child[1]);
             SymbolList assignSymbol = st_lookup_from_given_scope(tree->child[0]->attr.name, tree->child[0]->scope);
-            emitRM("ST", ac, assignSymbol->memloc - MAX_MEM, fp, "assign: store value");
+            emitRM("ST", ac, assignSymbol->memloc - MEMORY_SIZE, fp, "assign: store value");
         }
         emitComment("<- assign");
         break;
@@ -509,7 +483,7 @@ static void genExp(TreeNode *tree)
         emitRM("ST", fp, tempOffset, fp, "Guard fp"); // Salva o fp do chamador
         tempOffset -= 2;                              // Reserva espaço para o antigo fp e para o endereço de retorno
 
-        p1 = tree->child[0]; // Parâmetros
+        p1 = tree->child[0]; 
         isParamFuncall = TRUE;
         while (p1 != NULL)
         {
@@ -529,31 +503,11 @@ static void genExp(TreeNode *tree)
         break;
     }
 
-    // ok
-    case UnaryK: {
-        emitComment("-> Unary");
-        // Avalia o operando unário
-        cGen(tree->child[0]);
-        if (tree->attr.op == MINUS)
-        {
-            // Para inverter o sinal, você pode carregar 0 em outro registrador
-            // e subtrair o valor avaliado.
-            emitRM("LDC", ac1, 0, 0, "load 0 for unary minus");
-            emitRO("SUB", ac, ac1, ac, "compute unary minus");
-            // Se necessário, mova o resultado de ac1 para ac (ou ajuste a convenção dos registradores)
-            // Por exemplo: emitRO("ADD", ac, ac1, 0, "move result to ac");
-            // Dependendo da sua máquina, você pode querer deixar o resultado em ac diretamente.
-        }
-        emitComment("<- Unary");
-        break;
-    }
-
     default:
         break;
     }
 }
 
-/* Percorre recursivamente a árvore de sintaxe */
 static void cGen(TreeNode *tree)
 {
     if (tree != NULL)
@@ -575,30 +529,24 @@ static void cGen(TreeNode *tree)
     }
 }
 
-/* Função principal de geração de código */
+
 void codeGen(TreeNode *syntaxTree)
 {
     emitComment("TINY Compilation to TM Code");
 
     emitComment("Standard prelude:");
 
-    // 🔹 Inicializa o `mp` (Memory Pointer) no topo da memória
     emitRM("LD", mp, 0, 0, "load maxaddress from location 0");
 
-    // 🔹 Inicializa o `fp` (Frame Pointer) no topo da memória
     emitRM("LD", fp, 0, 0, "load maxaddress from location 0");
 
-    // 🔹 Zera a posição de memória 0 (por segurança)
     emitRM("ST", ac, 0, 0, "clear location 0");
 
-    // 🔹 Mensagem indicando o fim da configuração inicial
     emitComment("End of standard prelude.");
 
-    // emitSkip(1);
 
     currentScopeName = "global";
     cGen(syntaxTree);
     emitComment("End of execution.");
-    /* Garante a finalização do programa */
     emitRO("HALT", 0, 0, 0, "");
 }

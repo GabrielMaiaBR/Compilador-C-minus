@@ -16,9 +16,10 @@
 #endif
 
 #define MAXRESERVED 8
-#define MAX_MEM 1023
-#define HASH_SIZE 211
+#define MEMORY_SIZE 1023
+#define SIZE 211
 #define SHIFT 4
+
 
 #define MAXCHILDREN 3
 
@@ -42,7 +43,7 @@ extern int lineno;
 
 typedef enum { StmtK, ExpK } NodeKind;
 typedef enum { FunK, VarK, VetK, ParamK, ParamVetK, IfK, IteraK, ReturnK, CompoundK} StmtKind;
-typedef enum { OpK, ConstK, IdK, AssignK, FunCallK, UnaryK } ExpKind;
+typedef enum { OpK, ConstK, IdK, AssignK, FunCallK} ExpKind;
 
 typedef enum { Void, Integer } ExpType;
 
@@ -66,7 +67,7 @@ typedef struct Scope {
 	char*         name;
 	struct Scope* parent;
 	struct Scope* next;
-	SymbolList    hashTable[HASH_SIZE];
+	SymbolList    hashTable[SIZE];
 }* Scope;
 
 typedef struct treeNode {
@@ -88,6 +89,7 @@ typedef struct treeNode {
 	Scope   scope;
 	bool    isArray;
 } TreeNode;
+
 
 #ifndef YYPARSER
 #include "parser.h"
