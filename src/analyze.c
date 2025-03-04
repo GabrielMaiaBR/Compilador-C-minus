@@ -6,18 +6,15 @@
 #include <stdio.h>
 #include <string.h>
 
-bool mainIsDefined = FALSE;
+// Flags e variáveis globais para controle de estado
+bool mainIsDefined = FALSE;     // Indica se a função main foi definida
+bool fromFunction = FALSE;      // Controla escopo de funções
+int localoffset = MEMORY_SIZE - 2;  // Alocação de memória local (pilha)
+int globaloffset = 0;            // Alocação de memória global
+int compound_tracker = 0;        // Rastreia blocos compostos aninhados
+static int location = 0;         // Localização para funções built-in
 
-bool fromFunction = FALSE;
-
-int localoffset = MEMORY_SIZE - 2;
-
-int globaloffset = 0;
-
-int compoundTracker = 0;
-
-static int location = 0;
-
+// Cria um novo escopo e atualiza a lista de escopos
 void enterNewScope(char* scopeName) {
 	Scope newScope   = malloc(sizeof(struct Scope));
 	newScope->parent = current_scope;
@@ -38,14 +35,17 @@ void enterNewScope(char* scopeName) {
 	current_scope = newScope;
 }
 
+// Retorna ao escopo pai quando sai de blocos/funções
 void exitScope(TreeNode* tree) {
-	if (tree->nodekind == StmtK) {
-		if (tree->kind.stmt == CompoundK) {
-			current_scope = current_scope->parent;
-		} else if (tree->kind.stmt == FunK && current_scope->parent != NULL) {
-			current_scope = current_scope->parent;
-		}
-	}
+    if (tree->nodekind != StmtK) return;
+    if (tree->kind.stmt == CompoundK) {
+        current_scope = current_scope->parent;
+        return;
+    }
+    if (tree->kind.stmt == FunK && current_scope->parent != NULL) {
+        current_scope = current_scope->parent;
+        return;
+    }
 }
 
 static void semanticError(TreeNode* node, const char* format, ...) {
@@ -73,8 +73,10 @@ static void traverse(TreeNode* tree, void (*preProcess)(TreeNode*),
 }
 
 static void nullProc(TreeNode* node) {
-	if (node==NULL) return;
-  	else return;
+    if (node == NULL)
+        return;
+    else
+        return;
 }
 
 static void insertNode(TreeNode* node) {
@@ -82,7 +84,7 @@ static void insertNode(TreeNode* node) {
 	switch (node->nodekind) {
 		case StmtK:
 			switch (node->kind.stmt) {
-				case FunK: {
+				case FunK: { // Tratamento de declaração de funções
 					fromFunction = true;
 					if (strcmp(node->attr.name, "main") == 0) {
 						mainIsDefined = true;
@@ -91,64 +93,58 @@ static void insertNode(TreeNode* node) {
 					if (st_lookup(node->attr.name)) {
 						semanticError(node, "Function '%s' already declared", node->attr.name);
 					} else {
-						st_insert(node->attr.name, FunK, "global", node->type, node->lineno,
-							MEMORY_SIZE - 1, false);
+						st_insert(node->attr.name, FunK, "global", node->type, node->lineno, MEMORY_SIZE - 1, false);
 						enterNewScope(node->attr.name); 
 					}
 					break;
 				}
-				case VarK: {
-					if (node->type == Void) {
-						semanticError(node, "Variable declared as void");
-						break;
-					}
-					if (st_lookup_no_parent(node->attr.name) == NULL) {
-						if (strcmp(current_scope->name, "global") == 0) {
-							globaloffset += node->child[0]->attr.val;
-							st_insert(node->attr.name, VarK, current_scope->name, node->type,
-								node->lineno, globaloffset, node->isArray);
-								globaloffset += 1;
-						} else {
-							st_insert(node->attr.name, VarK, current_scope->name, node->type,
-									  node->lineno, localoffset, node->isArray);
-									  localoffset -= 1;
-						}
-					}
-					break;
+				case VarK: { // Inserção de variáveis simples
+                    if (node->type == Void) {
+                        semanticError(node, "Variable declared as void");
+                        break;
+                    }
+                    SymbolList existVar = st_lookup_no_parent(node->attr.name);
+                    if (existVar == NULL) {
+                        if (strcmp(current_scope->name, "global") == 0) {
+                            globaloffset += node->child[0]->attr.val;
+                            st_insert(node->attr.name, VarK, current_scope->name, node->type, node->lineno, globaloffset, node->isArray);
+                            globaloffset++;
+                        } else {
+                            st_insert(node->attr.name, VarK, current_scope->name, node->type, node->lineno, localoffset, node->isArray);
+                            localoffset--;
+                        }
+                    }
+                    break;
 				}
-				case VetK: {
-					if (node->type == Void) {
-						semanticError(node, "Variable declared as void");
-						break;
-					}
-					if (st_lookup_no_parent(node->attr.name) == NULL) {
-						if (strcmp(current_scope->name, "global") == 0) {
-							globaloffset += node->child[0]->attr.val;
-							st_insert(node->attr.name, VarK, current_scope->name, node->type,
-									  node->lineno, globaloffset++, node->isArray);
-						} else {
-							st_insert(node->attr.name, VarK, current_scope->name, node->type,
-									  node->lineno, localoffset--, node->isArray);
-							localoffset -= node->child[0]->attr.val;
-						}
-					}
-					break;
+				case VetK: { // Inserção de arrays/vetores
+                    if (node->type == Void) {
+                        semanticError(node, "Variable declared as void");
+                        break;
+                    }
+                    if (st_lookup_no_parent(node->attr.name) == NULL) {
+                        if (strcmp(current_scope->name, "global") == 0) {
+                            globaloffset += node->child[0]->attr.val;
+                            st_insert(node->attr.name, VarK, current_scope->name, node->type, node->lineno, globaloffset++, node->isArray);
+                        } else {
+                            st_insert(node->attr.name, VarK, current_scope->name, node->type, node->lineno, localoffset, node->isArray);
+                            localoffset -= node->child[0]->attr.val;
+                        }
+                    }
+                    break;
 				}
-				case ParamK: {
+				case ParamK: { // Tratamento de parâmetros de função
 					if (!st_lookup_no_parent(node->attr.name)) {
 						if (strcmp(current_scope->name, "global") == 0) {
-							st_insert(node->attr.name, node->kind.stmt, current_scope->name,
-									  node->type, node->lineno, globaloffset++, node->isArray);
+							st_insert(node->attr.name, node->kind.stmt, current_scope->name, node->type, node->lineno, globaloffset++, node->isArray);
 						} else {
-							st_insert(node->attr.name, node->kind.stmt, current_scope->name,
-									  node->type, node->lineno, localoffset--, node->isArray);
+							st_insert(node->attr.name, node->kind.stmt, current_scope->name, node->type, node->lineno, localoffset--, node->isArray);
 						}
 					} else {
 						semanticError(node, "Parameter '%s' already defined", node->attr.name);
 					}
 					break;
 				}
-				case CompoundK: {
+				case CompoundK: { // Criação de escopo para blocos compostos
 					if (fromFunction) {
 						fromFunction = false;
 						break;
@@ -156,9 +152,9 @@ static void insertNode(TreeNode* node) {
 					if (strcmp(current_scope->name, "global") == 0) {
 						break;
 					}
-					compoundTracker++;
+					compound_tracker++;
 					char newScope[20];
-					sprintf(newScope, "compound%d", compoundTracker);
+					sprintf(newScope, "compound%d", compound_tracker);
 					enterNewScope(newScope);
 					node->attr.name = strdup(newScope);
 					break;
@@ -167,7 +163,7 @@ static void insertNode(TreeNode* node) {
 					break;
 			}
 		break;
-		case ExpK: {
+		case ExpK: { // Verificação de identificadores e chamadas
 			switch (node->kind.exp) {
 				case IdK:
 				case FunCallK:
@@ -187,22 +183,23 @@ static void insertNode(TreeNode* node) {
 	}
 }
 
+// Realiza verificações de tipo e uso correto de símbolos
 static void checkNode(TreeNode* node) {
 	switch (node->nodekind) {
 		case ExpK:
 			switch (node->kind.exp) {
-				case OpK:
-					if (node->child[0]->type != Integer || node->child[1]->type != Integer) {
-						semanticError(node, "operands must be of type integer");
-						break;
-					}
-					node->type = Integer;
-					break;
+				case OpK: // Validação de operações
+                    if (node->child[0]->type == Integer && node->child[1]->type == Integer) {
+                        node->type = Integer;
+                    } else {
+                        semanticError(node, "operands must be of type integer");
+                    }
+                    break;
 				case ConstK:
 					node->type = Integer;
 					break;
 
-				case IdK: {
+				case IdK: { // Resolução de tipos de identificadores
 					SymbolList symbol = st_lookup(node->attr.name);
 					if (symbol == NULL) {
 						node->type = Integer;
@@ -212,7 +209,7 @@ static void checkNode(TreeNode* node) {
 					break;
 				}
 
-				case FunCallK:
+				case FunCallK: // Verificação de chamadas de função
 					if (node->attr.name == NULL) {
 						node->type = Void;
 						break;
@@ -227,8 +224,7 @@ static void checkNode(TreeNode* node) {
 
 				case AssignK:
 					if (node->child[0]->nodekind == ExpK && node->child[0]->kind.exp == FunCallK)
-						if (node->child[0]->type != Integer &&
-						    st_lookup(node->child[0]->attr.name) != NULL)
+						if (node->child[0]->type != Integer && st_lookup(node->child[0]->attr.name) != NULL)
 							semanticError(node, "invalid use of void expression");
 					break;
 				default:
@@ -238,12 +234,11 @@ static void checkNode(TreeNode* node) {
 
 		case StmtK:
 			switch (node->kind.stmt) {
-				case ReturnK:
-					if (node->child[0] == NULL) { // return vazio
+				case ReturnK: // Validação de retorno de funções
+					if (node->child[0] == NULL) {
 						SymbolList funSymbol = st_lookup(current_scope->name);
 						if (funSymbol->type != Void) {
-							semanticError(node,
-							              "Function with non-void return type must return a value");
+							semanticError(node, "Function with non-void return type must return a value");
 						}
 					}
 					break;
@@ -259,8 +254,10 @@ static void checkNode(TreeNode* node) {
 
 void buildSymtab(TreeNode* syntaxTree) {
 	enterNewScope("global");
-	st_insert("input", FunK, "global", Integer, -1, location++, FALSE);
-	st_insert("output", FunK, "global", Void, -1, location++, FALSE);
+	st_insert("input", FunK, "global", Integer, -1, location, FALSE);
+	location++;
+	st_insert("output", FunK, "global", Void, -1, location, FALSE);
+	location++;
 
 	traverse(syntaxTree, insertNode, exitScope);
 
@@ -270,6 +267,7 @@ void buildSymtab(TreeNode* syntaxTree) {
 	}
 }
 
+// Verificação final de tipos e existência da main
 void typeCheck(TreeNode* syntaxTree) {
 	if (!mainIsDefined) {
 		semanticError(syntaxTree, "main function not defined");
